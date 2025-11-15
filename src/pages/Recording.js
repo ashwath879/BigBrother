@@ -2,9 +2,42 @@ import React, { useState } from "react";
 import CameraRecorder from "../components/CameraRecorder";
 import Timeline from "../components/Timeline";
 
+const randomNames = [
+  "Morning Routine",
+  "Medication Time",
+  "Exercise Session",
+  "Meal Preparation",
+  "Memory Exercise",
+  "Daily Check-in",
+  "Activity Break",
+  "Safety Check",
+  "Social Time",
+  "Evening Routine",
+  "Health Monitoring",
+  "Task Reminder",
+  "Care Check",
+  "Wellness Activity",
+  "Reminder Alert",
+];
+
 function Recording() {
   const [isRecording, setIsRecording] = useState(false);
   const [events, setEvents] = useState([]);
+  const [eventIdCounter, setEventIdCounter] = useState(0);
+
+  const getRandomName = () => {
+    return randomNames[Math.floor(Math.random() * randomNames.length)];
+  };
+
+  const addEvent = () => {
+    const newEvent = {
+      id: eventIdCounter,
+      title: getRandomName(),
+      timestamp: new Date(),
+    };
+    setEvents((prev) => [...prev, newEvent]);
+    setEventIdCounter((prev) => prev + 1);
+  };
 
   const handleStartRecording = () => {
     setIsRecording(true);
@@ -56,10 +89,16 @@ function Recording() {
             </button>
           </div>
         </div>
-        <div className="w-24 flex flex-col items-center">
-          <div className="h-full min-h-[600px]">
+        <div className="w-96 flex flex-col items-start">
+          <div className="w-full h-[70vh] max-h-[70vh] overflow-y-auto">
             <Timeline events={events} />
           </div>
+          <button
+            onClick={addEvent}
+            className="mt-4 px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200 shadow-sm text-sm"
+          >
+            Add Event
+          </button>
         </div>
       </div>
     </main>
@@ -67,4 +106,3 @@ function Recording() {
 }
 
 export default Recording;
-
