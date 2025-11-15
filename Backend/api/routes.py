@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 import os
+from datetime import datetime
 
 from db.database import (
     add_memory_node,
@@ -84,7 +85,14 @@ def ask():
 def start_recording():
     """Start audio recording"""
     data = request.get_json() or {}
-    output_path = data.get("output_path", "recording.wav")
+    # Generate unique filename if not provided
+    if "output_path" not in data:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = f"recordings/recording_{timestamp}.wav"
+        # Ensure recordings directory exists
+        os.makedirs("recordings", exist_ok=True)
+    else:
+        output_path = data.get("output_path")
     
     result, status_code = recorder.start_recording(output_path)
     return jsonify(result), status_code
@@ -286,4 +294,41 @@ def record_and_transcribe():
         
     except Exception as e:
         return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
+
+
+# Audio playback endpoints
+@api.route("/audio/<path:filename>", methods=["GET"])
+def get_audio(filename):
+    """Serve audio file by filename"""
+    # Security: prevent directory traversal
+    if ".." in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    
+    # Try recordings directory first
+    file_path = os.path.join("recordings", filename)
+    if not os.path.exists(file_path):
+        # Try current directory
+        file_path = filename
+    
+    if not os.path.exists(file_path):
+        return jsonify({"error": "Audio file not found"}), 404
+    
+    return send_file(file_path, mimetype="audio/wav")
+
+
+@api.route("/memories/<int:node_id>/audio", methods=["GET"])
+def get_memory_audio(node_id):
+    """Get audio file for a specific memory node"""
+    memory = get_memory_node_by_id(node_id)
+    if not memory:
+        return jsonify({"error": "Memory node not found"}), 404
+    
+    audio_path = memory.get("audio_path")
+    if not audio_path:
+        return jsonify({"error": "No audio file associated with this memory"}), 404
+    
+    if not os.path.exists(audio_path):
+        return jsonify({"error": "Audio file not found"}), 404
+    
+    return send_file(audio_path, mimetype="audio/wav")
 

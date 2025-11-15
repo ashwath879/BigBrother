@@ -100,3 +100,30 @@ def get_memory_node_by_id(node_id):
     """, (node_id,)).fetchone()
     return dict(row) if row else None
 
+def delete_all_memory_nodes():
+    """
+    Delete all memory nodes from the database.
+    
+    Returns:
+        Number of memory nodes deleted
+    """
+    conn = get_connection()
+    cursor = conn.execute("DELETE FROM memory_nodes")
+    conn.commit()
+    return cursor.rowcount
+
+def delete_memory_node(node_id):
+    """
+    Delete a specific memory node by ID.
+    
+    Args:
+        node_id: The ID of the memory node to delete
+    
+    Returns:
+        True if deleted, False if not found
+    """
+    conn = get_connection()
+    cursor = conn.execute("DELETE FROM memory_nodes WHERE id = ?", (node_id,))
+    conn.commit()
+    return cursor.rowcount > 0
+
