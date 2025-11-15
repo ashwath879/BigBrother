@@ -1,18 +1,24 @@
 import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Home from "./pages/Home";
+import About from "./pages/About";
+import FAQ from "./pages/FAQ";
 
 function App() {
   return (
-    <div className="min-h-screen bg-primary-50 flex flex-col">
-      <Header />
-      <main className="flex-grow flex justify-center items-center">
-        <div className="bg-white p-8 border border-primary-100 w-[80vw] h-[80vh]">
-          <h1 className="text-4xl font-bold text-primary-800 mb-4">HI</h1>
-        </div>
-      </main>
-      <Footer />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-primary-50 flex flex-col">
+        <Header />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/faq" element={<FAQ />} />
+        </Routes>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

@@ -1,9 +1,7 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -14,15 +12,12 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
 };
 
-// Validate Firebase config
 if (!firebaseConfig.apiKey || !firebaseConfig.authDomain) {
   console.error("Firebase configuration is missing. Please check your .env file.");
 }
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Analytics only if supported (handles development environments)
 let analytics = null;
 isSupported().then((supported) => {
   if (supported) {
@@ -32,9 +27,8 @@ isSupported().then((supported) => {
   console.log("Analytics not available:", error);
 });
 
-// Initialize Auth
 const auth = getAuth(app);
-auth.useDeviceLanguage(); // Set the language for auth prompts
+auth.useDeviceLanguage();
 
 export { app, analytics, auth };
 
