@@ -1,50 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CameraRecorder from "../components/CameraRecorder";
 import Timeline from "../components/Timeline";
 import Chat from "../components/Chat";
 
-const eventTitles = [
-  "event1",
-  "event2",
-  "event3",
-  "event4",
-  "event5",
-  "event6",
-  "event7",
-  "event8",
-  "event9",
-  "event10",
-  "event11",
-  "event12",
-  "event13",
-  "event14",
-  "event15",
-  "event16",
-  "event17",
-  "event18",
-  "event19",
-];
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 function Recording() {
   const [isRecording, setIsRecording] = useState(false);
+  const [motionDetected, setMotionDetected] = useState(false);
+  const [isCurrentlyRecording, setIsCurrentlyRecording] = useState(false);
   const [events, setEvents] = useState([]);
-  const [eventIdCounter, setEventIdCounter] = useState(0);
-  const [index, setIndex] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
-  const addEvent = () => {
-    if (index >= eventTitles.length) {
-      return;
+  // Fetch memory nodes and convert them to events
+  const fetchMemoryNodes = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/memory-nodes?file_type=recording`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.error("Failed to fetch memory nodes:", response.status);
+        return;
+      }
+
+      const data = await response.json();
+      const memoryNodes = data.memory_nodes || [];
+
+      // Convert memory nodes to events
+      const convertedEvents = memoryNodes.map((node) => {
+        let metadata = {};
+        try {
+          metadata =
+            typeof node.metadata === "string"
+              ? JSON.parse(node.metadata)
+              : node.metadata || {};
+        } catch (e) {
+          console.error("Error parsing metadata:", e);
+        }
+
+        const fullSummary =
+          metadata.summary || metadata.description || "No summary available";
+
+        // Format timestamp as title (e.g., "11/15 11:52 PM")
+        const timestamp = node.timestamp || new Date().toISOString();
+
+        // Ensure timestamp is treated as UTC - add 'Z' if not present
+        let utcTimestamp = timestamp;
+        if (
+          !utcTimestamp.endsWith("Z") &&
+          !utcTimestamp.includes("+") &&
+          !utcTimestamp.includes("-", 10)
+        ) {
+          // If no timezone info, assume it's UTC and add 'Z'
+          utcTimestamp = utcTimestamp.replace(/\.\d{3,6}/, "") + "Z";
+        }
+
+        const date = new Date(utcTimestamp);
+
+        // Format as EST/EDT for title
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+          timeZone: "America/New_York",
+        });
+        const parts = formatter.formatToParts(date);
+        const month = parts.find((p) => p.type === "month").value;
+        const day = parts.find((p) => p.type === "day").value;
+        const hour = parts.find((p) => p.type === "hour").value;
+        const minute = parts.find((p) => p.type === "minute").value;
+        const dayPeriod =
+          parts.find((p) => p.type === "dayPeriod")?.value || "";
+        const formattedTitle = `${month}/${day} ${hour}:${minute} ${dayPeriod.toUpperCase()}`;
+
+        return {
+          id: node.id,
+          title: formattedTitle,
+          timestamp: timestamp,
+          summary: fullSummary,
+          transcript: metadata.transcript || null,
+          video_path: metadata.video_path || node.file_path,
+          audio_path: metadata.audio_path || null,
+          transcript_path: metadata.transcript_path || null,
+          objects_detected: metadata.objects_detected || [],
+        };
+      });
+
+      // Sort by timestamp (newest first)
+      convertedEvents.sort((a, b) => {
+        const dateA = new Date(a.timestamp);
+        const dateB = new Date(b.timestamp);
+        return dateB - dateA;
+      });
+
+      setEvents(convertedEvents);
+    } catch (error) {
+      console.error("Error fetching memory nodes:", error);
     }
-    const newEvent = {
-      id: eventIdCounter,
-      title: eventTitles[index],
-      timestamp: new Date(),
-      summary: `Summary for ${eventTitles[index]} wkfugasbjfhgaifuyagsifa`,
-    };
-    setEvents((prev) => [...prev, newEvent]);
-    setEventIdCounter((prev) => prev + 1);
-    setIndex((prev) => prev + 1);
   };
 
   const handleEventClick = (event) => {
@@ -55,13 +117,254 @@ function Recording() {
     setSelectedEvent(null);
   };
 
-  const handleStartRecording = () => {
-    setIsRecording(true);
+  const handleStartRecording = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch(`${API_BASE_URL}/camera/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          camera_index: 0,
+          fps: 10.0,
+          min_area: 2000,
+          inactivity_timeout: 5.0,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = {
+            error: `Server error: ${response.status} ${response.statusText}`,
+          };
+        }
+        console.error("Failed to start camera:", errorData);
+        alert(
+          `Failed to start camera: ${
+            errorData.error || `Server error (${response.status})`
+          }`
+        );
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error("Failed to start camera:", data);
+        alert(`Failed to start camera: ${data.error}`);
+      } else {
+        setIsRecording(true);
+        console.log("Camera started:", data);
+      }
+    } catch (error) {
+      console.error("Error starting camera:", error);
+
+      if (error.name === "AbortError") {
+        alert(
+          "Connection timeout. Please make sure the backend server is running:\n\npython3 Backend/app.py"
+        );
+      } else if (
+        error.message === "Load failed" ||
+        error.message.includes("fetch") ||
+        error.message.includes("NetworkError") ||
+        error.message.includes("Failed to fetch") ||
+        error instanceof TypeError
+      ) {
+        // Network/CORS error
+        alert(
+          "Could not connect to the backend server.\n\n" +
+            "Please make sure the server is running:\n" +
+            "python3 Backend/app.py\n\n" +
+            "The server should be running on: http://localhost:5000"
+        );
+      } else {
+        alert(`Error starting camera: ${error.message || "Unknown error"}`);
+      }
+    }
   };
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
+  const handleStopRecording = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch(`${API_BASE_URL}/camera/stop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      // Check if response is ok before trying to parse JSON
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = {
+            error: `Server error: ${response.status} ${response.statusText}`,
+          };
+        }
+        console.error("Failed to stop camera:", errorData);
+        alert(
+          `Failed to stop camera: ${
+            errorData.error || `Server error (${response.status})`
+          }`
+        );
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        console.error("Failed to stop camera:", data);
+        alert(`Failed to stop camera: ${data.error}`);
+      } else {
+        setIsRecording(false);
+        setMotionDetected(false);
+        setIsCurrentlyRecording(false);
+        console.log("Camera stopped:", data);
+      }
+    } catch (error) {
+      console.error("Error stopping camera:", error);
+
+      if (error.name === "AbortError") {
+        alert(
+          "Connection timeout. Please make sure the backend server is running:\n\npython3 Backend/app.py"
+        );
+      } else if (
+        error.message === "Load failed" ||
+        error.message.includes("fetch") ||
+        error.message.includes("NetworkError") ||
+        error.message.includes("Failed to fetch") ||
+        error instanceof TypeError
+      ) {
+        // Network/CORS error
+        alert(
+          "Could not connect to the backend server.\n\n" +
+            "Please make sure the server is running:\n" +
+            "python3 Backend/app.py\n\n" +
+            "The server should be running on: http://localhost:5000"
+        );
+      } else {
+        alert(`Error stopping camera: ${error.message || "Unknown error"}`);
+      }
+    }
   };
+
+  // Fetch memory nodes on mount and periodically
+  useEffect(() => {
+    const fetchAndRefresh = async () => {
+      await fetchMemoryNodes();
+    };
+
+    fetchAndRefresh();
+
+    // Refresh events every 5 seconds to catch new recordings
+    const refreshInterval = setInterval(fetchAndRefresh, 5000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Refresh events when recording stops
+  useEffect(() => {
+    if (!isRecording) {
+      // Wait a bit for backend to finish processing, then refresh
+      const timeoutId = setTimeout(() => {
+        fetchMemoryNodes();
+      }, 3000); // Wait 3 seconds after recording stops
+
+      return () => clearTimeout(timeoutId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording]);
+
+  // Poll camera status regularly ONLY when recording is active
+  useEffect(() => {
+    let intervalId = null;
+
+    // Only poll if recording is active
+    if (!isRecording) {
+      // Clear any existing interval
+      if (intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+      return;
+    }
+
+    const checkCameraStatus = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
+
+        const response = await fetch(`${API_BASE_URL}/camera/status`, {
+          signal: controller.signal,
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }).catch(() => null); // Catch network errors silently
+
+        clearTimeout(timeoutId);
+
+        // If fetch failed (network error), response will be null
+        if (!response || !response.ok) {
+          return;
+        }
+
+        try {
+          const data = await response.json();
+
+          // Update motion and recording states
+          if (data.motion_detected !== undefined) {
+            setMotionDetected(data.motion_detected);
+          }
+          if (data.is_currently_recording !== undefined) {
+            setIsCurrentlyRecording(data.is_currently_recording);
+          }
+
+          // If camera stopped on backend, update state
+          if (data.is_running === false) {
+            setIsRecording(false);
+            setMotionDetected(false);
+            setIsCurrentlyRecording(false);
+          }
+        } catch (e) {
+          // JSON parse error - silently ignore
+        }
+      } catch (error) {
+        // Catch all errors silently
+      }
+    };
+
+    // Start polling immediately when recording starts
+    checkCameraStatus();
+    // Poll every 1 second for responsive updates during recording
+    intervalId = setInterval(checkCameraStatus, 1000);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isRecording]);
 
   const handleRecordingStart = () => {
     console.log("Recording started");
@@ -83,6 +386,8 @@ function Recording() {
                     onRecordingStart={handleRecordingStart}
                     onRecordingStop={handleRecordingStop}
                     isRecording={isRecording}
+                    motionDetected={motionDetected}
+                    isCurrentlyRecording={isCurrentlyRecording}
                   />
                 </div>
               </div>
@@ -126,21 +431,9 @@ function Recording() {
                 </p>
               </div>
 
-              <div className="flex-1 min-h-0 mb-3" style={{ height: "25vh" }}>
+              <div className="flex-1 min-h-0" style={{ height: "25vh" }}>
                 <Timeline events={events} onEventClick={handleEventClick} />
               </div>
-
-              <button
-                onClick={addEvent}
-                disabled={index >= eventTitles.length}
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-semibold transition-all duration-200 shadow-md flex-shrink-0 ${
-                  index >= eventTitles.length
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-lg transform hover:-translate-y-0.5"
-                }`}
-              >
-                Add Event
-              </button>
             </div>
           </div>
         </div>
@@ -174,7 +467,45 @@ function Recording() {
                 </h2>
                 {selectedEvent.timestamp && (
                   <p className="text-sm text-gray-500 mt-1">
-                    {new Date(selectedEvent.timestamp).toLocaleString()}
+                    {(() => {
+                      // Ensure timestamp is treated as UTC
+                      let utcTimestamp = selectedEvent.timestamp;
+                      if (
+                        !utcTimestamp.endsWith("Z") &&
+                        !utcTimestamp.includes("+") &&
+                        !utcTimestamp.includes("-", 10)
+                      ) {
+                        utcTimestamp =
+                          utcTimestamp.replace(/\.\d{3,6}/, "") + "Z";
+                      }
+
+                      // Parse as UTC and format in EST/EDT
+                      const date = new Date(utcTimestamp);
+                      const formatter = new Intl.DateTimeFormat("en-US", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                        hour12: true,
+                        timeZone: "America/New_York",
+                      });
+                      const parts = formatter.formatToParts(date);
+                      const month = parts.find((p) => p.type === "month").value;
+                      const day = parts.find((p) => p.type === "day").value;
+                      const year = parts.find((p) => p.type === "year").value;
+                      const hour = parts.find((p) => p.type === "hour").value;
+                      const minute = parts.find(
+                        (p) => p.type === "minute"
+                      ).value;
+                      const second = parts.find(
+                        (p) => p.type === "second"
+                      ).value;
+                      const dayPeriod =
+                        parts.find((p) => p.type === "dayPeriod")?.value || "";
+                      return `${month}/${day}/${year} ${hour}:${minute}:${second} ${dayPeriod.toUpperCase()}`;
+                    })()}
                   </p>
                 )}
               </div>
@@ -208,18 +539,38 @@ function Recording() {
                     "No summary available for this event."}
                 </p>
               </div>
-              {selectedEvent.details && (
+
+              {selectedEvent.transcript && (
                 <div className="mt-6">
                   <h4 className="text-md font-semibold text-gray-900 mb-2">
-                    Additional Details
+                    Transcript
                   </h4>
                   <div className="bg-gray-50 rounded-lg p-4">
-                    <pre className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {JSON.stringify(selectedEvent.details, null, 2)}
-                    </pre>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {selectedEvent.transcript}
+                    </p>
                   </div>
                 </div>
               )}
+
+              {selectedEvent.objects_detected &&
+                selectedEvent.objects_detected.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="text-md font-semibold text-gray-900 mb-2">
+                      Objects Detected
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedEvent.objects_detected.map((obj, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
+                        >
+                          {obj}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
           </div>
         </div>

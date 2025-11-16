@@ -36,7 +36,7 @@ if load_dotenv:
 
 _MODEL = None
 
-__all__ = ["describe_image", "summarize_video", "search_memory_nodes"]
+__all__ = ["describe_image", "summarize_video", "search_memory_nodes", "generate_title"]
 
 
 def _get_api_key() -> str:
@@ -281,6 +281,80 @@ Example response: [5, 12, 3]"""
         return []
     
     return []
+
+
+def generate_title(summary: str, timeout: int = 30) -> str:
+    """Generate a very short title (max 50 characters) from a summary using Gemini.
+    
+    Args:
+        summary: The full summary text to create a title from
+        timeout: Seconds to wait for Gemini response
+    
+    Returns:
+        A short title string (max 50 characters), or a fallback if generation fails
+    """
+    if not summary or len(summary.strip()) == 0:
+        return "Recording"
+    
+    model = _get_model()
+    
+    prompt = f"""Generate a very short, concise title (maximum 50 characters) that summarizes the following text.
+
+Text: "{summary}"
+
+Return ONLY the title, nothing else. The title should be:
+- Very concise (50 characters maximum)
+- Descriptive of the main event or activity
+- Natural and readable
+- No quotes or formatting
+
+Example: "Person cooking dinner in kitchen"
+
+Title:"""
+
+    try:
+        response = model.generate_content(
+            prompt,
+            request_options={"timeout": timeout},
+        )
+        
+        title = getattr(response, "text", None)
+        if title:
+            title = title.strip()
+            # Remove quotes if present
+            title = title.strip('"').strip("'").strip()
+            # Truncate to 50 characters if needed
+            if len(title) > 50:
+                title = title[:47] + "..."
+            return title
+        
+        # Try to extract from candidates
+        if hasattr(response, "candidates"):
+            for candidate in response.candidates or []:
+                if not candidate.content or not getattr(candidate.content, "parts", None):
+                    continue
+                for part in candidate.content.parts:
+                    text = getattr(part, "text", None)
+                    if text:
+                        title = text.strip().strip('"').strip("'").strip()
+                        if len(title) > 50:
+                            title = title[:47] + "..."
+                        return title
+        
+    except Exception as exc:
+        LOGGER.warning(f"Gemini title generation failed: {exc}. Using fallback.")
+    
+    # Fallback: create a simple title from the summary
+    fallback = summary.strip()
+    if len(fallback) > 50:
+        # Find the last space before 50 characters
+        last_space = fallback[:47].rfind(' ')
+        if last_space > 20:
+            fallback = fallback[:last_space] + "..."
+        else:
+            fallback = fallback[:47] + "..."
+    
+    return fallback
 
 
 if __name__ == "__main__":

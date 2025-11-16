@@ -12,6 +12,7 @@ from db.database import (
 )
 from audio import recorder, transcribe_audio, save_transcript
 from ai.gemini_client import search_memory_nodes as gemini_search_memory_nodes
+from camera.camera_service import get_camera_service
 
 api = Blueprint("api", __name__)
 
@@ -260,4 +261,40 @@ def search_memory_nodes_endpoint():
         
     except Exception as e:
         return jsonify({"error": f"Search failed: {str(e)}"}), 500
+
+
+# Camera service endpoints
+@api.route("/camera/start", methods=["POST"])
+def start_camera():
+    """Start the camera module for motion detection and recording"""
+    data = request.get_json() or {}
+    
+    try:
+        camera_service = get_camera_service()
+        result, status_code = camera_service.start(**data)
+        return jsonify(result), status_code
+    except Exception as e:
+        return jsonify({"error": f"Failed to start camera: {str(e)}"}), 500
+
+
+@api.route("/camera/stop", methods=["POST"])
+def stop_camera():
+    """Stop the camera module"""
+    try:
+        camera_service = get_camera_service()
+        result, status_code = camera_service.stop()
+        return jsonify(result), status_code
+    except Exception as e:
+        return jsonify({"error": f"Failed to stop camera: {str(e)}"}), 500
+
+
+@api.route("/camera/status", methods=["GET"])
+def get_camera_status():
+    """Get the current camera service status"""
+    try:
+        camera_service = get_camera_service()
+        status = camera_service.get_status()
+        return jsonify(status), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to get camera status: {str(e)}"}), 500
 

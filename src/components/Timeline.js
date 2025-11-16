@@ -14,11 +14,24 @@ function Timeline({ events = [], onEventClick }) {
   if (events.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center py-8">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m-6 0V8m6 0l-3 3m0 0l3 3m-3-3H9" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-12 w-12 text-gray-300 mb-3"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4l3 3m-6 0V8m6 0l-3 3m0 0l3 3m-3-3H9"
+          />
         </svg>
         <div className="text-gray-400 text-sm font-medium">No events yet</div>
-        <div className="text-gray-400 text-xs mt-1">Events will appear here</div>
+        <div className="text-gray-400 text-xs mt-1">
+          Events will appear here
+        </div>
       </div>
     );
   }
@@ -36,10 +49,7 @@ function Timeline({ events = [], onEventClick }) {
   };
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="overflow-y-auto relative h-full"
-    >
+    <div ref={scrollContainerRef} className="overflow-y-auto relative h-full">
       <div
         ref={contentRef}
         className="relative flex flex-col items-start pt-2 pb-2 gap-2 w-full"
@@ -54,7 +64,7 @@ function Timeline({ events = [], onEventClick }) {
               className="relative flex items-center w-full group"
             >
               <div className="absolute left-6 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-4 h-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-white"></div>
-              
+
               <div className="ml-10 flex-1 min-w-0">
                 <button
                   onClick={() => handleEventClick(event)}
@@ -65,7 +75,19 @@ function Timeline({ events = [], onEventClick }) {
                   </div>
                   {event.timestamp && (
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {new Date(event.timestamp).toLocaleTimeString()}
+                      {(() => {
+                        // Format timestamp in EST/EDT
+                        const date = new Date(event.timestamp);
+                        const formatter = new Intl.DateTimeFormat("en-US", {
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                          timeZone: "America/New_York",
+                        });
+                        return `${formatter.format(date)}`;
+                      })()}
                     </div>
                   )}
                 </button>
