@@ -4,6 +4,8 @@ function Chat({ onSendMessage }) {
   const [message, setMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const finalTranscriptRef = useRef("");
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
@@ -14,32 +16,50 @@ function Chat({ onSendMessage }) {
       recognitionRef.current.interimResults = true;
       recognitionRef.current.lang = "en-US";
 
-      recognitionRef.current.onresult = (event) => {
-        let interimTranscript = "";
-        let finalTranscript = "";
+      recognitionRef.current.onstart = () => {
+        finalTranscriptRef.current = "";
+        isProcessingRef.current = false;
+      };
 
+      recognitionRef.current.onresult = (event) => {
+        if (isProcessingRef.current) {
+          return; // Prevent multiple simultaneous updates
+        }
+        isProcessingRef.current = true;
+
+        let interimTranscript = "";
+
+        // Only process results from resultIndex onwards (new results)
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript + " ";
+            // Add to final transcript
+            finalTranscriptRef.current += transcript + " ";
           } else {
+            // Current interim result
             interimTranscript += transcript;
           }
         }
 
-        setMessage((prev) => {
-          const baseText = prev.replace(interimTranscript, "");
-          return baseText + finalTranscript + interimTranscript;
-        });
+        // Update message with final transcript + current interim transcript
+        setMessage(finalTranscriptRef.current + interimTranscript);
+
+        isProcessingRef.current = false;
       };
 
       recognitionRef.current.onerror = (event) => {
         console.error("Speech recognition error:", event.error);
         setIsListening(false);
+        isProcessingRef.current = false;
       };
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
+        isProcessingRef.current = false;
+        // Ensure final transcript is set
+        if (finalTranscriptRef.current) {
+          setMessage(finalTranscriptRef.current.trim());
+        }
       };
     }
 
@@ -60,6 +80,9 @@ function Chat({ onSendMessage }) {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
+      // Reset final transcript when starting new recognition
+      finalTranscriptRef.current = "";
+      setMessage("");
       recognitionRef.current.start();
       setIsListening(true);
     }
