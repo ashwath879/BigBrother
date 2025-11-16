@@ -45,7 +45,7 @@ function Home() {
             BigBrother
           </h1>
           <h2 className="text-xl font-medium text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
-            Assisting Alzheimer's patients with everyday tasks through
+            Assisting memory loss patients with everyday tasks through
             intelligent monitoring and AI-powered insights
           </h2>
           <button
