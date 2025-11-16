@@ -29,12 +29,12 @@ function Timeline({ events = [] }) {
   return (
     <div
       ref={scrollContainerRef}
-      className="overflow-y-auto flex items-center justify-center relative"
+      className="overflow-y-auto relative"
       style={{ maxHeight: "50vh" }}
     >
       <div
         ref={contentRef}
-        className="relative flex flex-col items-center py-8 gap-12 w-full"
+        className="relative flex flex-col items-center pt-8 pb-8 gap-12 w-full"
       >
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-300 transform -translate-x-1/2"></div>
         {events.map((event, idx) => {

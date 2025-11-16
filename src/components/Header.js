@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   signInWithPopup,
   signOut,
@@ -11,6 +11,7 @@ import { auth } from "../firebase";
 function Header() {
   const [user, setUser] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getRedirectResult(auth)
@@ -45,6 +46,7 @@ function Header() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
+      navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -55,7 +57,7 @@ function Header() {
   };
 
   return (
-    <header className="bg-gradient-to-r from-primary-600 to-primary-600 text-white shadow-lg">
+    <header className="bg-primary-500 text-white shadow-lg">
       <div className="relative px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex-shrink-0 w-1/3"></div>

@@ -116,7 +116,7 @@ function Chat({ onSendMessage }) {
         disabled={!message.trim()}
         className={`p-2 rounded-lg transition-colors duration-200 ${
           message.trim()
-            ? "bg-primary-600 text-white hover:bg-primary-700"
+            ? "bg-primary-500 text-white hover:bg-primary-700"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
         }`}
         title="Send message"
