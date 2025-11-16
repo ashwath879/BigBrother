@@ -99,14 +99,9 @@ function Recording() {
             hour12: true,
             timeZone: "America/New_York",
           });
-          const parts = formatter.formatToParts(date);
-          const month = parts.find((p) => p.type === "month").value;
-          const day = parts.find((p) => p.type === "day").value;
-          const hour = parts.find((p) => p.type === "hour").value;
-          const minute = parts.find((p) => p.type === "minute").value;
-          const dayPeriod =
-            parts.find((p) => p.type === "dayPeriod")?.value || "";
-          eventTitle = `${month}/${day} ${hour}:${minute} ${dayPeriod.toUpperCase()}`;
+          
+          // Use the formatter directly to get the correct timezone-adjusted string
+          eventTitle = formatter.format(date);
         }
 
         return {
@@ -655,14 +650,7 @@ function Recording() {
             hour12: true,
             timeZone: "America/New_York",
           });
-          const parts = formatter.formatToParts(date);
-          const month = parts.find((p) => p.type === "month").value;
-          const day = parts.find((p) => p.type === "day").value;
-          const hour = parts.find((p) => p.type === "hour").value;
-          const minute = parts.find((p) => p.type === "minute").value;
-          const dayPeriod =
-            parts.find((p) => p.type === "dayPeriod")?.value || "";
-          eventTitle = `${month}/${day} ${hour}:${minute} ${dayPeriod.toUpperCase()}`;
+          eventTitle = formatter.format(date);
         }
 
         const event = {
@@ -815,20 +803,7 @@ function Recording() {
                         hour12: true,
                         timeZone: "America/New_York",
                       });
-                      const parts = formatter.formatToParts(date);
-                      const month = parts.find((p) => p.type === "month").value;
-                      const day = parts.find((p) => p.type === "day").value;
-                      const year = parts.find((p) => p.type === "year").value;
-                      const hour = parts.find((p) => p.type === "hour").value;
-                      const minute = parts.find(
-                        (p) => p.type === "minute"
-                      ).value;
-                      const second = parts.find(
-                        (p) => p.type === "second"
-                      ).value;
-                      const dayPeriod =
-                        parts.find((p) => p.type === "dayPeriod")?.value || "";
-                      return `${month}/${day}/${year} ${hour}:${minute}:${second} ${dayPeriod.toUpperCase()}`;
+                      return formatter.format(date);
                     })()}
                   </p>
                 )}
