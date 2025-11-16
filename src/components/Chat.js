@@ -74,24 +74,24 @@ function Chat({ onSendMessage }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
+    <form onSubmit={handleSubmit} className="flex items-center gap-3 w-full">
       <div className="flex-1 relative">
         <input
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          placeholder="Ask a question or type a message..."
+          className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-400"
         />
       </div>
 
       <button
         type="button"
         onClick={handleMicrophoneClick}
-        className={`p-2 rounded-lg transition-colors duration-200 ${
+        className={`p-3 rounded-xl transition-all duration-200 shadow-md ${
           isListening
-            ? "bg-red-500 text-white hover:bg-red-600"
-            : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            ? "bg-red-600 text-white hover:bg-red-700 hover:shadow-lg transform hover:scale-105"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-lg"
         }`}
         title={isListening ? "Stop recording" : "Start voice input"}
       >
@@ -114,9 +114,9 @@ function Chat({ onSendMessage }) {
       <button
         type="submit"
         disabled={!message.trim()}
-        className={`p-2 rounded-lg transition-colors duration-200 ${
+        className={`p-3 rounded-xl transition-all duration-200 shadow-md ${
           message.trim()
-            ? "bg-primary-500 text-white hover:bg-primary-700"
+            ? "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-lg transform hover:scale-105"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
         }`}
         title="Send message"

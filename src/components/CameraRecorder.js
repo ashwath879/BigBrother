@@ -96,23 +96,27 @@ function CameraRecorder({ onRecordingStart, onRecordingStop, isRecording }) {
   }, [isRecording]);
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="relative bg-black rounded-lg overflow-hidden shadow-lg">
+    <div className="flex flex-col items-center justify-center w-full h-full">
+      <div className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl overflow-hidden shadow-2xl border-2 border-gray-700 w-full h-full flex items-center justify-center">
         <video
           ref={videoRef}
           autoPlay
           playsInline
           muted
-          className="w-full h-auto max-h-[70vh] object-contain"
+          className="w-full h-full object-contain"
         />
         {isRecording && (
-          <div className="absolute top-4 left-4 flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-white font-medium">Recording</span>
+          <div className="absolute top-4 left-4 flex items-center space-x-2 bg-red-600/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg z-10">
+            <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse"></div>
+            <span className="text-white font-semibold text-sm">REC</span>
           </div>
         )}
       </div>
-      {error && <div className="mt-4 text-red-500 text-sm">{error}</div>}
+      {error && (
+        <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm font-medium">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
