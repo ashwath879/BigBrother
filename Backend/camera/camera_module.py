@@ -256,7 +256,7 @@ def run_camera_loop(
     capture_fps: Optional[float] = None,
     max_frame_failures: int = 10,
     warmup_period: float = 2.0,
-    inactivity_timeout: float = 5.0,
+    inactivity_timeout: float = 1.0,
     delta_thresh: int = 50,
     status_callback: Optional[Callable[[bool, bool, float], None]] = None,
 ):
