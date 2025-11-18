@@ -2,6 +2,8 @@
   "name": "bigbrother",
   "version": "0.1.0",
   "private": true,
+  "main": "electron.js",
+  "homepage": "./",
   "dependencies": {
     "firebase": "^9.23.0",
     "react": "^18.2.0",
@@ -12,14 +14,22 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.16",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "postcss": "^8.4.32",
-    "tailwindcss": "^2.2.19"
+    "tailwindcss": "^2.2.19",
+    "wait-on": "^7.2.0"
   },
   "scripts": {
     "start": "PORT=3000 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron:dev": "concurrently \"BROWSER=none npm start\" \"wait-on http://localhost:3000 && ELECTRON_START_URL=http://localhost:3000 electron .\"",
+    "postinstall": "electron-builder install-app-deps",
+    "preelectron-pack": "npm run build",
+    "electron-pack": "electron-builder -w"
   },
   "eslintConfig": {
     "extends": [
@@ -37,5 +47,28 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "build": {
+    "appId": "com.AdamZeineldin.bigbrother",
+    "productName": "BigBrother",
+    "files": [
+      "build/**/*",
+      "node_modules/**/*",
+      "electron.js",
+      "package.json",
+      "Backend/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   }
 }
