@@ -22,6 +22,11 @@ This application is packaged with Electron to run as a standalone desktop app.
     ```
     This will start the backend server, the frontend, and open the application window.
 
+    To run Electron with a custom backend port:
+    ```bash
+    BACKEND_PORT=5050 REACT_APP_API_URL=http://localhost:5050/api npm run electron:dev
+    ```
+
 ## Package for Production
 
 To create a distributable desktop application for your operating system (e.g., `.dmg` for macOS, `.exe` for Windows), run the following command from the root directory:
@@ -53,7 +58,12 @@ For developers who want to work on the source code, the frontend and backend can
     ```bash
     python3 app.py
     ```
-    The backend server will be running on [http://localhost:5000](http://localhost:5000).
+    By default, the backend server runs on [http://localhost:5000](http://localhost:5000).
+
+    To use a different backend port:
+    ```bash
+    BACKEND_PORT=5050 python3 app.py
+    ```
 
 ### Frontend Setup
 
@@ -68,6 +78,11 @@ For developers who want to work on the source code, the frontend and backend can
     npm start
     ```
     The app will open at [http://localhost:3000](http://localhost:3000).
+
+    If your backend is on a non-default port, point the frontend to it:
+    ```bash
+    REACT_APP_API_URL=http://localhost:5050/api npm start
+    ```
 
 ## Technologies Used
 
@@ -92,5 +107,3 @@ For developers who want to work on the source code, the frontend and backend can
 - Fixing Motion Detection - Recording UI/Backend
 - Adding way to delete timeline events
 - Secret Pivot (TOP SECRET)
-
-

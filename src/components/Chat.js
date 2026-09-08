@@ -91,68 +91,66 @@ function Chat({ onSendMessage }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex items-center gap-3 w-full">
-      <div className="flex-1 relative">
+    <form onSubmit={handleSubmit} className="flex w-full flex-col gap-3 md:flex-row md:items-center">
+      <div className="relative flex-1">
         <input
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Ask a question or type a message..."
-          className="w-full px-5 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 bg-gray-50 focus:bg-white text-gray-900 placeholder-gray-400"
+          placeholder="Ask a question about a recorded event..."
+          className="ps-input"
         />
       </div>
 
-      <button
-        type="button"
-        onClick={handleMicrophoneClick}
-        className={`p-3 rounded-xl transition-all duration-200 shadow-md ${
-          isListening
-            ? "bg-red-600 text-white hover:bg-red-700 hover:shadow-lg transform hover:scale-105"
-            : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow-lg"
-        }`}
-        title={isListening ? "Stop recording" : "Start voice input"}
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={handleMicrophoneClick}
+          className={`ps-button ps-button--small ${
+            isListening ? "ps-button--danger" : "ps-button--ghost"
+          }`}
+          title={isListening ? "Stop recording" : "Start voice input"}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-          />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+            />
+          </svg>
+          <span>{isListening ? "Listening" : "Voice"}</span>
+        </button>
 
-      <button
-        type="submit"
-        disabled={!message.trim()}
-        className={`p-3 rounded-xl transition-all duration-200 shadow-md ${
-          message.trim()
-            ? "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-lg transform hover:scale-105"
-            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-        }`}
-        title="Send message"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+        <button
+          type="submit"
+          disabled={!message.trim()}
+          className="ps-button ps-button--primary ps-button--small"
+          title="Send message"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M14 5l7 7m0 0l-7 7m7-7H3"
-          />
-        </svg>
-      </button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            />
+          </svg>
+          <span>Send</span>
+        </button>
+      </div>
     </form>
   );
 }

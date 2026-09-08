@@ -32,3 +32,6 @@ __pycache__/
 yolov8n.pt
 app.db
 Backend/data/
+
+# Local agent worktrees
+.claude/worktrees/

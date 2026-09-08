@@ -157,9 +157,10 @@ def analyze_and_log_video(
             except Exception as e:
                 logging.error(f"YOLO prediction failed: {e}")
 
-        summary = ""
+        summary = None
         try:
-            summary = summarize_video(video_path)
+            result = summarize_video(video_path)
+            summary = result if result and result.strip() else None
         except Exception as e:
             logging.error(f"Gemini video summary failed: {e}")
 
@@ -405,7 +406,7 @@ def run_camera_loop(
                     
                     frame_height, frame_width, _ = frame.shape
                     
-                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    fourcc = cv2.VideoWriter_fourcc(*'avc1')
                     video_writer = cv2.VideoWriter(video_path, fourcc, capture_fps or processing_fps, (frame_width, frame_height))
                     
                     if audio_recorder:

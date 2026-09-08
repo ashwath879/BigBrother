@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const API_SERVER_URL = API_BASE_URL.replace(/\/api\/?$/, "");
 
 function Recording() {
   const [isRecording, setIsRecording] = useState(false);
@@ -70,14 +71,12 @@ function Recording() {
         }
 
         const summaryText = metadata.summary;
-        const isSummaryLoading =
-          summaryText === "Loading Summary..." ||
-          summaryText === null ||
-          !summaryText ||
-          summaryText.trim() === "";
+        const isSummaryLoading = summaryText === "Loading Summary...";
         const fullSummary = isSummaryLoading
           ? "Loading Summary..."
-          : summaryText || "No summary available";
+          : summaryText && summaryText.trim() !== ""
+          ? summaryText
+          : "No summary available";
 
         let eventTitle = metadata.title;
 
@@ -116,6 +115,7 @@ function Recording() {
           video_path: metadata.video_path || node.file_path,
           audio_path: metadata.audio_path || null,
           transcript_path: metadata.transcript_path || null,
+          thumbnail_path: metadata.thumbnail_path || null,
           objects_detected: metadata.objects_detected || [],
         };
       });
@@ -250,7 +250,7 @@ function Recording() {
           "Could not connect to the backend server.\n\n" +
             "Please make sure the server is running:\n" +
             "python3 Backend/app.py\n\n" +
-            "The server should be running on: http://localhost:5000"
+            `The server should be running on: ${API_SERVER_URL}`
         );
       } else {
         alert(`Error starting camera: ${error.message || "Unknown error"}`);
@@ -320,7 +320,7 @@ function Recording() {
           "Could not connect to the backend server.\n\n" +
             "Please make sure the server is running:\n" +
             "python3 Backend/app.py\n\n" +
-            "The server should be running on: http://localhost:5000"
+            `The server should be running on: ${API_SERVER_URL}`
         );
       } else {
         alert(`Error stopping camera: ${error.message || "Unknown error"}`);
@@ -365,7 +365,7 @@ function Recording() {
         }
       }
     }
-  }, [events]);
+  }, [events, selectedEvent]);
 
   useEffect(() => {
     let intervalId = null;
@@ -590,14 +590,12 @@ function Recording() {
         }
 
         const summaryText = metadata.summary;
-        const isSummaryLoading =
-          summaryText === "Loading Summary..." ||
-          summaryText === null ||
-          !summaryText ||
-          summaryText.trim() === "";
+        const isSummaryLoading = summaryText === "Loading Summary...";
         const fullSummary = isSummaryLoading
           ? "Loading Summary..."
-          : summaryText || "No summary available";
+          : summaryText && summaryText.trim() !== ""
+          ? summaryText
+          : "No summary available";
 
         let eventTitle = metadata.title;
         if (!eventTitle || eventTitle.trim() === "") {
@@ -659,98 +657,110 @@ function Recording() {
   };
 
   return (
-    <main className="flex-1 bg-gradient-to-br from-primary-50 via-white to-primary-50 min-h-screen">
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-3 gap-6 mb-6 items-stretch">
-          <div className="col-span-2 flex flex-col">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 flex flex-col h-full">
-              <div className="mb-4 w-3/4 h-[25vh] flex items-center justify-center flex-shrink-0 mx-auto">
-                <div className="w-full h-full">
-                  <CameraRecorder
-                    onRecordingStart={handleRecordingStart}
-                    onRecordingStop={handleRecordingStop}
-                    isRecording={isRecording}
-                    motionDetected={motionDetected}
-                    isCurrentlyRecording={isCurrentlyRecording}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-row items-center justify-center gap-4 flex-shrink-0">
-                <button
-                  onClick={handleStartRecording}
-                  disabled={isRecording}
-                  className={`inline-flex items-center gap-2 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                    isRecording
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-primary-600 text-white hover:bg-primary-700 hover:shadow-xl transform hover:-translate-y-0.5"
-                  }`}
-                >
-                  Start Recording
-                </button>
-                <button
-                  onClick={handleStopRecording}
-                  disabled={!isRecording}
-                  className={`inline-flex items-center gap-2 px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg ${
-                    !isRecording
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-red-600 text-white hover:bg-red-700 hover:shadow-xl transform hover:-translate-y-0.5"
-                  }`}
-                >
-                  Stop Recording
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-span-1 flex flex-col">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 flex flex-col h-full">
-              <div className="mb-3 flex-shrink-0">
-                <h2 className="text-xl font-bold text-primary-900 mb-1">
-                  Event Timeline
-                </h2>
-                <p className="text-sm text-gray-600">
-                  {events.length} {events.length === 1 ? "event" : "events"}{" "}
-                  recorded
-                </p>
-              </div>
-
-              <div className="flex-1 min-h-0" style={{ height: "25vh" }}>
-                <Timeline events={events} onEventClick={handleEventClick} />
-              </div>
-            </div>
-          </div>
+    <main className="flex-1 ps-surface-light py-8 md:py-10">
+      <div className="ps-container px-1">
+        <div
+          className="mb-6 flex flex-wrap items-center gap-3 px-4 py-3 ps-glass-bar"
+          style={{ borderRadius: "36px" }}
+        >
+          <span className="ps-chip" style={{ background: "#ffffff", color: "#000000" }}>
+            {isRecording ? "Camera monitoring is active" : "Camera is idle"}
+          </span>
+          <span className="ps-chip" style={{ background: "#ffffff", color: "#000000" }}>
+            {events.length} {events.length === 1 ? "event" : "events"} captured
+          </span>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+        <div className="grid gap-6 xl:grid-cols-3">
+          <section className="ps-card p-6 md:col-span-2 md:p-8">
+            <div className="mb-6">
+              <h1 className="ps-display-m">Recording console</h1>
+              <p className="ps-body mt-2">
+                Start monitoring to collect events automatically and keep your memory timeline updated in real time.
+              </p>
+            </div>
+
+            <div className="mx-auto w-full max-w-4xl" style={{ height: "46vh", minHeight: "380px" }}>
+              <CameraRecorder
+                onRecordingStart={handleRecordingStart}
+                onRecordingStop={handleRecordingStop}
+                isRecording={isRecording}
+                motionDetected={motionDetected}
+                isCurrentlyRecording={isCurrentlyRecording}
+              />
+            </div>
+
+            <div className="mt-7 flex flex-wrap justify-center gap-4">
+              <button
+                onClick={handleStartRecording}
+                disabled={isRecording}
+                className="ps-button ps-button--primary"
+              >
+                Start recording
+              </button>
+              <button
+                onClick={handleStopRecording}
+                disabled={!isRecording}
+                className="ps-button ps-button--danger"
+              >
+                Stop recording
+              </button>
+            </div>
+          </section>
+
+          <section className="ps-card p-6 md:p-7 xl:col-span-1">
+            <div className="mb-3">
+              <h2 className="ps-display-s">Event timeline</h2>
+              <p className="ps-caption mt-1">
+                Tap an event card to inspect media, summary, and transcript.
+              </p>
+            </div>
+
+            <div style={{ height: "40vh", minHeight: "320px" }}>
+              <Timeline events={events} onEventClick={handleEventClick} />
+            </div>
+          </section>
+        </div>
+
+        <section className="ps-card mt-6 p-6 md:p-8">
           <div className="mb-4">
-            <h2 className="text-xl font-bold text-primary-900 mb-1">
-              AI Assistant
-            </h2>
-            <p className="text-sm text-gray-600">
-              Ask questions about recorded events
+            <h2 className="ps-display-s">AI assistant</h2>
+            <p className="ps-body mt-2">
+              Ask a question about recent activity and BigBrother will pull the most relevant event.
             </p>
           </div>
           <Chat onSendMessage={handleChatMessage} />
-        </div>
+        </section>
       </div>
 
       {selectedEvent && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 ps-modal-scrim"
           onClick={closeEventModal}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[80vh] overflow-y-auto relative"
+            className="relative w-full max-w-6xl overflow-y-auto border bg-white"
+            style={{
+              borderColor: "#f3f3f3",
+              boxShadow: "0 5px 9px 0 rgba(0, 0, 0, 0.8)",
+              borderRadius: "24px",
+              maxHeight: "86vh",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-2xl">
+            <div
+              className="sticky top-0 flex items-start justify-between gap-3 px-6 py-4"
+              style={{
+                background: "linear-gradient(180deg, #ffffff 0%, #f5f7fa 100%)",
+                borderBottom: "1px solid #f3f3f3",
+                borderTopLeftRadius: "24px",
+                borderTopRightRadius: "24px",
+              }}
+            >
               <div>
-                <h2 className="text-2xl font-bold text-primary-900">
-                  {selectedEvent.title}
-                </h2>
+                <h2 className="ps-display-s">{selectedEvent.title}</h2>
                 {selectedEvent.timestamp && (
-                  <p className="text-sm text-gray-500 mt-1">
+                  <p className="ps-caption mt-1">
                     {(() => {
                       let utcTimestamp = selectedEvent.timestamp;
                       if (
@@ -778,53 +788,46 @@ function Recording() {
                   </p>
                 )}
               </div>
+
               <button
                 onClick={closeEventModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+                className="ps-button ps-button--ghost ps-button--small"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                Close
               </button>
             </div>
+
             <div className="p-6">
-              <div className="flex gap-6">
+              <div className="grid gap-6 lg:grid-cols-2">
                 {(selectedEvent.video_path || selectedEvent.audio_path) && (
-                  <div className="flex-shrink-0 w-1/2 flex flex-col gap-6">
+                  <section className="space-y-6">
                     {selectedEvent.video_path && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                          Video Recording
-                        </h3>
-                        <div className="rounded-lg overflow-hidden bg-black sticky top-6">
+                      <article>
+                        <h3 className="ps-title-sm mb-3">Video recording</h3>
+                        <div
+                          className="overflow-hidden bg-black ps-elevation-hero"
+                          style={{ borderRadius: "19px" }}
+                        >
                           <video
+                            key={selectedEvent.video_path}
                             controls
-                            className="w-full h-auto"
+                            className="h-auto w-full"
+                            poster={selectedEvent.thumbnail_path ? getFileUrl(selectedEvent.thumbnail_path) : undefined}
                             src={getVideoUrl(selectedEvent.video_path)}
                           >
                             Your browser does not support the video tag.
                           </video>
                         </div>
-                      </div>
+                      </article>
                     )}
 
                     {selectedEvent.audio_path && (
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                          Audio Recording
-                        </h3>
-                        <div className="rounded-lg overflow-hidden bg-gray-100 p-4">
+                      <article>
+                        <h3 className="ps-title-sm mb-3">Audio recording</h3>
+                        <div
+                          className="border p-4"
+                          style={{ borderColor: "#f3f3f3", background: "#f5f7fa", borderRadius: "19px" }}
+                        >
                           <audio
                             controls
                             className="w-full"
@@ -833,32 +836,30 @@ function Recording() {
                             Your browser does not support the audio tag.
                           </audio>
                         </div>
-                      </div>
+                      </article>
                     )}
-                  </div>
+                  </section>
                 )}
 
-                <div
-                  className={`flex-1 ${
-                    selectedEvent.video_path || selectedEvent.audio_path
-                      ? ""
-                      : "w-full"
-                  }`}
-                >
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Event Summary
-                  </h3>
+                <section>
+                  <h3 className="ps-title-sm mb-3">Event summary</h3>
                   <div
-                    className="bg-black/50 rounded-lg p-2 overflow-y-auto"
-                    style={{ maxHeight: "33vh" }}
+                    className="border bg-white p-4"
+                    style={{
+                      borderColor: "#f3f3f3",
+                      maxHeight: "36vh",
+                      overflowY: "auto",
+                      borderRadius: "19px",
+                    }}
                   >
                     {selectedEvent.summary === "Loading Summary..." ? (
                       <div className="flex items-center gap-2">
                         <svg
-                          className="animate-spin h-5 w-5 text-black"
+                          className="h-5 w-5 animate-spin"
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
                           viewBox="0 0 24 24"
+                          style={{ color: "#0070cc" }}
                         >
                           <circle
                             className="opacity-25"
@@ -874,51 +875,40 @@ function Recording() {
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                           ></path>
                         </svg>
-                        <p className="text-black italic">Loading Summary...</p>
+                        <p className="ps-body italic">Loading summary...</p>
                       </div>
                     ) : (
-                      <div className="text-black leading-relaxed break-words">
+                      <div className="ps-markdown ps-body break-words" style={{ color: "#1f1f1f" }}>
                         <ReactMarkdown
                           components={{
-                            h1: ({ node, ...props }) => (
-                              <h1
-                                className="text-2xl font-bold mb-3 mt-4"
-                                {...props}
-                              />
+                            h1: ({ node, children, ...props }) => (
+                              <h1 className="ps-display-s" {...props}>
+                                {children}
+                              </h1>
                             ),
-                            h2: ({ node, ...props }) => (
-                              <h2
-                                className="text-xl font-bold mb-2 mt-3"
-                                {...props}
-                              />
+                            h2: ({ node, children, ...props }) => (
+                              <h2 className="text-xl font-light" {...props}>
+                                {children}
+                              </h2>
                             ),
-                            h3: ({ node, ...props }) => (
-                              <h3
-                                className="text-lg font-bold mb-2 mt-3"
-                                {...props}
-                              />
+                            h3: ({ node, children, ...props }) => (
+                              <h3 className="text-lg font-medium" {...props}>
+                                {children}
+                              </h3>
                             ),
                             p: ({ node, ...props }) => (
                               <p className="mb-2" {...props} />
                             ),
                             strong: ({ node, ...props }) => (
-                              <strong className="font-bold" {...props} />
+                              <strong className="font-semibold" {...props} />
                             ),
                             ul: ({ node, ...props }) => (
-                              <ul
-                                className="list-disc list-inside mb-2 space-y-1"
-                                {...props}
-                              />
+                              <ul className="mb-2 list-disc space-y-1 pl-5" {...props} />
                             ),
                             ol: ({ node, ...props }) => (
-                              <ol
-                                className="list-decimal list-inside mb-2 space-y-1"
-                                {...props}
-                              />
+                              <ol className="mb-2 list-decimal space-y-1 pl-5" {...props} />
                             ),
-                            li: ({ node, ...props }) => (
-                              <li className="ml-4" {...props} />
-                            ),
+                            li: ({ node, ...props }) => <li {...props} />,
                           }}
                         >
                           {selectedEvent.summary ||
@@ -930,11 +920,12 @@ function Recording() {
 
                   {selectedEvent.transcript && (
                     <div className="mt-6">
-                      <h4 className="text-md font-semibold text-gray-900 mb-2">
-                        Transcript
-                      </h4>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      <h4 className="ps-title-sm mb-2">Transcript</h4>
+                      <div
+                        className="border p-4"
+                        style={{ borderColor: "#f3f3f3", background: "#f5f7fa", borderRadius: "13px" }}
+                      >
+                        <p className="whitespace-pre-wrap text-sm" style={{ color: "#1f1f1f" }}>
                           {selectedEvent.transcript}
                         </p>
                       </div>
@@ -944,14 +935,17 @@ function Recording() {
                   {selectedEvent.objects_detected &&
                     selectedEvent.objects_detected.length > 0 && (
                       <div className="mt-6">
-                        <h4 className="text-md font-semibold text-gray-900 mb-2">
-                          Objects Detected
-                        </h4>
+                        <h4 className="ps-title-sm mb-2">Objects detected</h4>
                         <div className="flex flex-wrap gap-2">
                           {selectedEvent.objects_detected.map((obj, idx) => (
                             <span
                               key={idx}
-                              className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
+                              className="rounded-full px-3 py-1 text-sm font-medium"
+                              style={{
+                                background: "#ffffff",
+                                border: "1px solid #f3f3f3",
+                                color: "#0068bd",
+                              }}
                             >
                               {obj}
                             </span>
@@ -959,17 +953,26 @@ function Recording() {
                         </div>
                       </div>
                     )}
-                </div>
+                </section>
               </div>
             </div>
 
             {isGeneratingAnswer && (
-              <div className="absolute bottom-4 left-4 flex items-center gap-2 text-sm text-gray-600 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border border-gray-200 z-10">
+              <div
+                className="absolute bottom-4 left-4 z-10 flex items-center gap-2 border px-3 py-2 text-sm"
+                style={{
+                  background: "rgba(255, 255, 255, 0.95)",
+                  borderColor: "#f3f3f3",
+                  color: "#1f1f1f",
+                  borderRadius: "12px",
+                }}
+              >
                 <svg
-                  className="animate-spin h-4 w-4 text-primary-600"
+                  className="h-4 w-4 animate-spin"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
+                  style={{ color: "#0070cc" }}
                 >
                   <circle
                     className="opacity-25"
@@ -985,7 +988,7 @@ function Recording() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span className="font-medium">Generating answer...</span>
+                <span>Generating answer...</span>
               </div>
             )}
           </div>

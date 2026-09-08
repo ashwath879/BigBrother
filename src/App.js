@@ -10,7 +10,7 @@ import Recording from "./pages/Recording";
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-primary-50 flex flex-col">
+      <div className="ps-app-shell">
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />

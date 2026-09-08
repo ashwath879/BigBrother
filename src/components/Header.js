@@ -1,121 +1,150 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import {
-  signInWithPopup,
-  signOut,
-  GoogleAuthProvider,
-  getRedirectResult,
-} from "firebase/auth";
-import { auth } from "../firebase";
+import { useAuth } from "../hooks/useAuth";
+
+const NAV_LINKS = [
+  { to: "/", label: "Home" },
+  { to: "/about", label: "About" },
+  { to: "/faq", label: "FAQ" },
+  { to: "/recording", label: "Recording" },
+];
 
 function Header() {
-  const [user, setUser] = useState(null);
+  const [isWorking, setIsWorking] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isAuthReady, signInWithGoogle, signOutUser } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          setUser(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-    });
+  const isActive = (path) => location.pathname === path;
 
-    return () => unsubscribe();
-  }, []);
-
-  const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.addScope("profile");
-    provider.addScope("email");
+  const handleAuthClick = async () => {
+    setAuthError("");
+    setIsWorking(true);
 
     try {
-      await signInWithPopup(auth, provider);
+      if (user) {
+        await signOutUser();
+        navigate("/");
+      } else {
+        await signInWithGoogle();
+      }
     } catch (error) {
-      console.log(error);
+      setAuthError("Authentication failed. Please try again.");
+      console.error("Authentication error:", error);
+    } finally {
+      setIsWorking(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      navigate("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
-
-  const isActive = (path) => {
-    return location.pathname === path;
   };
 
   return (
-    <header className="bg-primary-500 text-white shadow-lg">
-      <div className="relative px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex-shrink-0 w-1/3"></div>
-          <nav className="flex items-center space-x-12 absolute left-1/2 transform -translate-x-1/2">
-            <Link
-              to="/"
-              className={`font-medium transition-colors duration-200 ${
-                isActive("/")
-                  ? "text-white border-b-2 border-white pb-1"
-                  : "text-primary-100 hover:text-white"
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className={`font-medium transition-colors duration-200 ${
-                isActive("/about")
-                  ? "text-white border-b-2 border-white pb-1"
-                  : "text-primary-100 hover:text-white"
-              }`}
-            >
-              About
-            </Link>
-            <Link
-              to="/faq"
-              className={`font-medium transition-colors duration-200 ${
-                isActive("/faq")
-                  ? "text-white border-b-2 border-white pb-1"
-                  : "text-primary-100 hover:text-white"
-              }`}
-            >
-              FAQ
-            </Link>
-          </nav>
-          <div className="flex items-center space-x-4 flex-shrink-0 w-1/3 justify-end">
-            {user ? (
-              <div className="flex items-center space-x-3">
-                <span className="hidden md:block font-medium text-white whitespace-nowrap">
-                  Hi, {user.displayName || user.email}
-                </span>
-                <button
-                  onClick={handleSignOut}
-                  className="bg-white text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors duration-200 shadow-sm whitespace-nowrap"
-                >
-                  Sign Out
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={signInWithGoogle}
-                className="bg-white text-primary-700 px-6 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm whitespace-nowrap"
+    <header className="sticky top-0 z-50 bg-black ps-divider-bottom" style={{ borderColor: "#1f1f1f" }}>
+      <div className="ps-container">
+        <div className="flex items-center justify-between gap-4 py-3">
+          <Link to="/" className="inline-flex items-center rounded-full px-1.5 py-1 transition-opacity hover:opacity-90">
+            <span className="text-lg font-medium tracking-wide text-white">BigBrother</span>
+          </Link>
+
+          <nav className="hidden items-center gap-7 md:flex">
+            {NAV_LINKS.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`ps-nav-link ${isActive(item.to) ? "ps-nav-link--active" : ""}`}
               >
-                <span>Sign in</span>
-              </button>
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+
+          <div className="hidden items-center gap-3 md:flex">
+            {user && (
+              <span className="ps-chip" style={{ background: "rgba(255, 255, 255, 0.12)", color: "#ffffff" }}>
+                Signed in as {user.displayName?.split(" ")[0] || "User"}
+              </span>
             )}
+            <button
+              onClick={handleAuthClick}
+              disabled={isWorking || !isAuthReady}
+              className="ps-button ps-button--primary ps-button--small"
+            >
+              {isWorking ? "Working..." : user ? "Sign out" : "Sign in"}
+            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border text-white transition hover:border-white hover:text-blue-300 md:hidden"
+            style={{ borderColor: "rgba(255, 255, 255, 0.3)" }}
+            aria-expanded={isMenuOpen}
+            aria-label="Toggle navigation"
+          >
+            <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
         </div>
+
+        {authError && (
+          <p className="pb-2 text-sm" style={{ color: "#ff9aa6" }}>
+            {authError}
+          </p>
+        )}
+
+        {isMenuOpen && (
+          <div className="md:hidden">
+            <div
+              className="mb-4 rounded-3xl border px-5 py-5 shadow-2xl"
+              style={{
+                borderColor: "rgba(255, 255, 255, 0.2)",
+                background: "rgba(0, 0, 0, 0.9)",
+              }}
+            >
+              <nav className="flex flex-col gap-4">
+                {NAV_LINKS.map((item) => (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`text-base font-medium transition hover:text-blue-300 ${
+                      isActive(item.to) ? "text-white" : "text-gray-300"
+                    }`}
+                    style={
+                      isActive(item.to)
+                        ? {
+                            textDecoration: "underline",
+                            textDecorationThickness: "2px",
+                            textDecorationColor: "#0070cc",
+                          }
+                        : undefined
+                    }
+                  >
+                    {item.label}
+                  </Link>
+                ))}
+              </nav>
+
+              {user && (
+                <p className="mt-5 ps-caption" style={{ color: "#d7e6f5" }}>
+                  Signed in as {user.displayName?.split(" ")[0] || "User"}
+                </p>
+              )}
+
+              <button
+                onClick={handleAuthClick}
+                disabled={isWorking || !isAuthReady}
+                className="ps-button ps-button--primary mt-4 w-full"
+              >
+                {isWorking ? "Working..." : user ? "Sign out" : "Sign in"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

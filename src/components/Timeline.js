@@ -13,13 +13,13 @@ function Timeline({ events = [], onEventClick }) {
 
   if (events.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center py-8">
+      <div className="flex h-full flex-col items-center justify-center py-8 text-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 text-gray-300 mb-3"
+          className="mb-3 h-12 w-12"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor"
+          stroke="#cccccc"
         >
           <path
             strokeLinecap="round"
@@ -28,8 +28,10 @@ function Timeline({ events = [], onEventClick }) {
             d="M12 8v4l3 3m-6 0V8m6 0l-3 3m0 0l3 3m-3-3H9"
           />
         </svg>
-        <div className="text-gray-400 text-sm font-medium">No events yet</div>
-        <div className="text-gray-400 text-xs mt-1">
+        <div className="text-sm font-medium" style={{ color: "#6b6b6b" }}>
+          No events yet
+        </div>
+        <div className="mt-1 text-xs" style={{ color: "#6b6b6b" }}>
           Events will appear here
         </div>
       </div>
@@ -49,32 +51,36 @@ function Timeline({ events = [], onEventClick }) {
   };
 
   return (
-    <div ref={scrollContainerRef} className="overflow-y-auto relative h-full">
-      <div
-        ref={contentRef}
-        className="relative flex flex-col items-start pt-2 pb-2 gap-2 w-full"
-      >
-        <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-300"></div>
+    <div ref={scrollContainerRef} className="relative h-full overflow-y-auto pr-1">
+      <div ref={contentRef} className="relative flex w-full flex-col items-start gap-3 pb-2 pt-2">
+        <div className="absolute bottom-0 left-5 top-0 w-0.5" style={{ background: "#0070cc" }} />
+
         {events.map((event, idx) => {
           const title = getEventTitle(event);
 
           return (
-            <div
-              key={event.id || idx}
-              className="relative flex items-center w-full group"
-            >
-              <div className="absolute left-6 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 w-4 h-4 rounded-full bg-primary-600 hover:bg-primary-700 transition-all duration-200 shadow-md hover:shadow-lg border-2 border-white"></div>
+            <div key={event.id || idx} className="group relative flex w-full items-center">
+              <div
+                className="absolute left-5 top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white"
+                style={{ background: "#0070cc" }}
+              />
 
-              <div className="ml-10 flex-1 min-w-0">
+              <div className="ml-9 flex-1 min-w-0">
                 <button
                   onClick={() => handleEventClick(event)}
-                  className="text-left bg-white border border-gray-200 rounded-lg shadow-sm px-2.5 py-1.5 hover:shadow-md hover:border-primary-300 transition-all duration-200 cursor-pointer w-full group-hover:bg-primary-50"
+                  className="w-full cursor-pointer border px-3 py-2 text-left transition"
+                  style={{
+                    borderColor: "#f3f3f3",
+                    background: "#ffffff",
+                    boxShadow: "0 5px 9px 0 rgba(0, 0, 0, 0.06)",
+                    borderRadius: "12px",
+                  }}
                 >
-                  <div className="text-xs font-semibold text-gray-900 group-hover:text-primary-700 truncate">
+                  <div className="truncate text-sm font-semibold" style={{ color: "#1f1f1f" }}>
                     {title}
                   </div>
                   {event.timestamp && (
-                    <div className="text-xs text-gray-500 mt-0.5">
+                    <div className="mt-0.5 text-xs" style={{ color: "#6b6b6b" }}>
                       {(() => {
                         let utcTimestamp = event.timestamp;
                         if (

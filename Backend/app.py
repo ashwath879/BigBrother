@@ -1,5 +1,5 @@
+import os
 from flask import Flask
-
 from flask_cors import CORS
 from db.database import init_db
 from api.routes import api
@@ -30,4 +30,5 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    backend_port = int(os.getenv("BACKEND_PORT", os.getenv("PORT", "5000")))
+    app.run(host="0.0.0.0", port=backend_port, debug=True)
